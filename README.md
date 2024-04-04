@@ -22,17 +22,114 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Installation
+# Instalacion y configuracion manual
+
+Este repositorio contiene un proyecto NestJS que incluye configuración para variables de entorno, conexión con una base de datos MySQL, y la creación de un módulo completo para manejar libros. Sigue las instrucciones a continuación para configurar y ejecutar el proyecto.
+
+1) Instalación de Módulos
 
 ```bash
-$ npm install
+$ npm install class-validator class-transformer --save
+$ npm install @nestjs/config --save-dev
+$ npm install @nestjs/typeorm typeorm mysql2
+$ npm install @nestjs/jwt passport passport-jwt
+$ npm install --save-dev @types/moment-timezone
+
+```
+1. copear las carpetas `src/config`   , `src/common` y `src/modules/auth`
+2. configurar las varaibles de entorno .env
+
+
+3. importar en app.modules.ts
+   
+```typescript
+   import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import configuration from './config/configuration';
+import { DatabaseModule } from './config/database.module';
+import { AuthModule } from './modules/auth/auth.module';
+
+@Module({
+  imports: [
+    //variables de entorno
+    ConfigModule.forRoot({
+      load: [configuration],
+      isGlobal: true
+    }),
+
+    //modulos
+    DatabaseModule,//base de datos
+    AuthModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+
+```
+4. configurar en main.ts
+
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
+import * as momentTimezone from 'moment-timezone';
+
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const configuracion=app.get(ConfigService)
+  const port = configuracion.get<number>('port');
+
+  //zona horaria
+  const zona= configuracion.get<string>('zonaHoraria');
+  momentTimezone.tz.setDefault(zona);
+
+  //validacion
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(port);
+  console.log(`Corriendo en el puerto: ${port}`);
+}
+bootstrap();
+
+```
+5. Creación de Módulos   
+<p> Para agregar un nuevo módulo a tu aplicación, como un módulo para manejar libros, utiliza el siguiente comando CLI de NestJS: (rest api/yes)</p>
+<p>ejemplo:</p>
+  
+```bash
+nest g resource modules/libros --no-spec
 ```
 
-## Running the app
+6. proteger las rutas:
+<b>Proteger todo el modulo:</b>
+<p>este va debajo de @Controller()</p>
+
+```bash
+@Controller('libros')
+@Auth(UserRole.CLIENT,UserRole.ADMIN)
+```
+
+
+<b>Proteger una sola peticion:</b>
+
+```bash
+@Auth(UserRole.CLIENT,UserRole.ADMIN)
+@Get()
+  mifuncion() {
+    return 'hola';
+  }
+```
+
+# Instalacion directa
+
+## Correr la app
 
 ```bash
 # development
@@ -58,16 +155,5 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
-## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
