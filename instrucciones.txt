@@ -1,0 +1,94 @@
+//instalar nest (solo una vez)
+>npm i -g @nestjs/cli
+
+//crear proyecto
+>nest new project-name	(npm)
+
+//instalar modulos
+>npm install class-validator class-transformer --save
+>npm install @nestjs/config --save-dev
+>npm install @nestjs/typeorm typeorm mysql2
+
+
+npm install @nestjs/jwt passport passport-jwt
+npm install --save-dev @types/moment-timezone
+
+
+
+//completar modulos
+1)copear las carpetas src/config   , src/common y src/modules/auth
+2)configurar las varaibles de entorno .env
+
+
+
+3)importar en app.modules.ts
+
+@Module({
+  imports: [
+    //variables de entorno
+    ConfigModule.forRoot({
+      load: [configuration],
+      isGlobal: true
+    }),
+
+    //modulos
+    DatabaseModule,//base de datos
+    AuthModule,
+  ],
+
+
+  controllers: [AppController],
+  providers: [AppService],
+  exports: []
+})
+
+
+4)configurar en main.ts
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const configuracion=app.get(ConfigService)
+  const port = configuracion.get<number>('port');
+
+  //zona horaria
+  const zona= configuracion.get<string>('zonaHoraria');
+  momentTimezone.tz.setDefault(zona);
+
+  //validacion
+  app.useGlobalPipes(new ValidationPipe());
+  await app.listen(port);
+  console.log(`Corriendo en el puerto: ${port}`);
+}
+bootstrap();
+
+
+
+
+
+
+
+
+
+
+//crear modulos completos
+> nest g resource modules/libros --no-spec (rest api/yes)
+//cambiar id: String a id: number  (controlador)
+//implementar (dto,libros.services.ts)
+
+//PROTEGER RUTAS
+
+//TODO EL MODULO
+@Controller('libros')
+@Auth(UserRole.CLIENT,UserRole.ADMIN)
+
+//solo una peticion
+@Auth(UserRole.CLIENT,UserRole.ADMIN)
+@Get()
+  mifuncion() {
+    return 'hola';
+  }
+
+
+//ejecutar 
+npm run start:dev
